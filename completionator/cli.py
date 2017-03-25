@@ -21,7 +21,9 @@ makedirs(str(CSV_PATH.parent), exist_ok=True)
 
 def get_settings(change_user=False):
     if change_user or not SETTINGS_PATH.exists():
-        user_id = click.prompt("What's your user ID?", type=int)
+        user_id = click.prompt(
+            "What's your user ID? (Go to 'My Profile', copy the number at the end of the URL)",
+            type=int)
         settings = {'user_id': user_id}
         with SETTINGS_PATH.open('w') as f:
             json.dump(settings, f)
@@ -32,6 +34,7 @@ def get_settings(change_user=False):
 
 
 def update_csv(user_id):
+    click.echo(click.style('Requesting data from server...', fg='blue'))
     r = requests.get(
         'http://completionator.com/Collection/ExportToExcel/{}?keyword=&isHidden=false&shouldBreakOutCompilationGames=true&sortColumn=GameName&sortDirection=ASC'.format(user_id))
     with CSV_PATH.open('w') as f:
@@ -51,19 +54,27 @@ def get_games():
 
 
 @click.command()
-@click.option('--change-user', default=False, is_flag=True)
-@click.option('--update', default=False, is_flag=True)
-@click.option('--active', default=False, is_flag=True)
-@click.option('--todo', default=False, is_flag=True)
-@click.option('--fmt', default='name', type=click.Choice(['name', 'repr', 'csv']))
-@click.option('--random/--no-random', default=False)
-@click.option('--limit', default=0, type=int)
+@click.option('--change-user', default=False, is_flag=True, help="Prompt to re-enter user ID")
+@click.option('--update', default=False, is_flag=True, help="Update data from server")
+@click.option('--active', default=False, is_flag=True, help="Show 'now playing'")
+@click.option('--todo', default=False, is_flag=True, help="Show incomplete")
+@click.option('--fmt', default='name', type=click.Choice(['name', 'repr', 'csv']), help="Output format")
+@click.option('--random/--no-random', default=False, help="Shuffle output")
+@click.option('--limit', default=0, type=int, help="Truncate results (0=don't truncate; default)")
 def cli(change_user, update, active, todo, fmt, random, limit):
     """
     Simple and sane interface to your Completionator collection.
 
     Made for one purpose: to list games in different states of progress,
     sometimes randomly.
+
+    Examples:
+
+        # show all games you're currently playing
+        python -m completionator --active
+
+        # show 2 random unplayed games
+        python -m complationator --todo
     """
 
     settings = get_settings(change_user=change_user)
