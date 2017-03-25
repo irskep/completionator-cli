@@ -101,6 +101,7 @@ def cli(change_user, update, active, todo, fmt, random, limit, stats):
         # show 2 random unplayed games
         > python -m completionator --todo
 
+        \b
         # show stats
         > python -m completionator --stats
         ┌Game stats───┬─────┐

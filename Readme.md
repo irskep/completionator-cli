@@ -19,10 +19,16 @@ Usage: __main__.py [OPTIONS]
 
       # show 2 random unplayed games     > python -m completionator --todo
 
-      # show stats     > python -m completionator --stats     ┌Game
-      stats───┬─────┐     │ Total games │ 475 │     │ Finished    │ 135 │
-      │ Excluded    │ 66  │     │ Incomplete  │ 259 │     │ Active      │ 37
-      │     │ % complete  │ 33% │     └─────────────┴─────┘
+          # show stats
+          > python -m completionator --stats
+          ┌Game stats───┬─────┐
+          │ Total games │ 475 │
+          │ Finished    │ 135 │
+          │ Excluded    │ 66  │
+          │ Incomplete  │ 259 │
+          │ Active      │ 37  │
+          │ % complete  │ 33% │
+          └─────────────┴─────┘
 
 Options:
   --change-user           Prompt to re-enter user ID
