@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import json
+import math
 import sys
 from collections import namedtuple
 from os import makedirs
@@ -10,6 +11,7 @@ from random import shuffle
 import appdirs
 import click
 import requests
+from terminaltables import SingleTable
 
 from .html2csv import html2csv
 
@@ -53,6 +55,28 @@ def get_games():
         return headings, [Game(*columns) for columns in reader]
 
 
+def print_stats(games):
+    num_done = len([g for g in games if g.progress_status in ('Finished', 'Completionated')])
+    num_excluded = len([g for g in games if g.progress_status in ('Never Playing',)])
+    num_incomplete = len([g for g in games if g.progress_status in ('Incomplete',)])
+    num_active = len([g for g in games if g.now_playing == 'Yes'])
+
+    fraction_complete = num_done / (len(games) - num_excluded)
+    percent_complete = "{}%".format(math.floor(fraction_complete * 100))
+    table_data = [
+        ['Total games', len(games)],
+        ['Finished', num_done],
+        ['Excluded', num_excluded],
+        ['Incomplete', num_incomplete],
+        ['Active', num_active],
+        ['% complete', percent_complete],
+    ]
+
+    table = SingleTable(table_data, title='Game stats')
+    table.inner_heading_row_border = False
+    click.echo(table.table)
+
+
 @click.command()
 @click.option('--change-user', default=False, is_flag=True, help="Prompt to re-enter user ID")
 @click.option('--update', default=False, is_flag=True, help="Update data from server")
@@ -61,20 +85,32 @@ def get_games():
 @click.option('--fmt', default='name', type=click.Choice(['name', 'repr', 'csv']), help="Output format")
 @click.option('--random/--no-random', default=False, help="Shuffle output")
 @click.option('--limit', default=0, type=int, help="Truncate results (0=don't truncate; default)")
-def cli(change_user, update, active, todo, fmt, random, limit):
+@click.option('--stats', default=False, is_flag=True, help="Print some stats to stderr")
+def cli(change_user, update, active, todo, fmt, random, limit, stats):
     """
     Simple and sane interface to your Completionator collection.
 
-    Made for one purpose: to list games in different states of progress,
-    sometimes randomly.
+    Made for two purposes: to list games in different states of progress,
+    sometimes randomly; and to show basic statistics.
 
     Examples:
 
         # show all games you're currently playing
-        python -m completionator --active
+        > python -m completionator --active
 
         # show 2 random unplayed games
-        python -m complationator --todo
+        > python -m completionator --todo
+
+        # show stats
+        > python -m completionator --stats
+        ┌Game stats───┬─────┐
+        │ Total games │ 475 │
+        │ Finished    │ 135 │
+        │ Excluded    │ 66  │
+        │ Incomplete  │ 259 │
+        │ Active      │ 37  │
+        │ % complete  │ 33% │
+        └─────────────┴─────┘
     """
 
     settings = get_settings(change_user=change_user)
@@ -83,6 +119,10 @@ def cli(change_user, update, active, todo, fmt, random, limit):
         update_csv(user_id=settings['user_id'])
 
     headings, games = get_games()
+
+    if stats:
+        print_stats(games)
+
     filtered_games = [
         g for g in games if (
             active and g.now_playing == 'Yes' or
