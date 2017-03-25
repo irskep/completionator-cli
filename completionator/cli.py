@@ -5,7 +5,7 @@ import sys
 from collections import namedtuple
 from os import makedirs
 from pathlib import Path
-from random import choice
+from random import shuffle
 
 import appdirs
 import click
@@ -39,7 +39,7 @@ def update_csv(user_id):
 
 
 def get_games():
-    with open('games.csv', 'r') as f:
+    with CSV_PATH.open('r') as f:
         reader = csv.reader(f)
         headings = next(reader)
         fields = [
@@ -57,7 +57,15 @@ def get_games():
 @click.option('--todo', default=False, is_flag=True)
 @click.option('--fmt', default='name', type=click.Choice(['name', 'repr', 'csv']))
 @click.option('--random/--no-random', default=False)
-def cli(change_user, update, active, todo, fmt, random):
+@click.option('--limit', default=0, type=int)
+def cli(change_user, update, active, todo, fmt, random, limit):
+    """
+    Simple and sane interface to your Completionator collection.
+
+    Made for one purpose: to list games in different states of progress,
+    sometimes randomly.
+    """
+
     settings = get_settings(change_user=change_user)
 
     if update or not CSV_PATH.exists():
@@ -71,7 +79,9 @@ def cli(change_user, update, active, todo, fmt, random):
         )
     ]
     if random:
-        filtered_games = [choice(filtered_games)]
+        shuffle(filtered_games)
+    if limit:
+        filtered_games = filtered_games[:limit]
 
     csv_writer = None
     if fmt == 'csv':
