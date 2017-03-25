@@ -14,10 +14,11 @@ Usage: __main__.py [OPTIONS]
 
   Examples:
 
-      # show all games you're currently playing     > python -m
-      completionator --active
+          # show all games you're currently playing
+          > python -m completionator --active
 
-      # show 2 random unplayed games     > python -m completionator --todo
+          # show 2 random unplayed games
+          > python -m completionator --todo
 
           # show stats
           > python -m completionator --stats
