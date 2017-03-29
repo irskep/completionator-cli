@@ -1,0 +1,29 @@
+body {
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+td:first-child {
+  text-align: right;
+  padding-right: 0.5rem;
+  border: none;
+}
+
+tr:nth-child(2n) {
+  background-color: #eee;
+  border: none;
+}

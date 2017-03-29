@@ -36,7 +36,7 @@ def get_settings(change_user=False):
 
 
 def update_csv(user_id):
-    click.echo(click.style('Requesting data from server...', fg='blue'))
+    click.echo(click.style('Requesting data from server...', fg='blue'), err=True)
     r = requests.get(
         'http://completionator.com/Collection/ExportToExcel/{}?keyword=&isHidden=false&shouldBreakOutCompilationGames=true&sortColumn=GameName&sortDirection=ASC'.format(user_id))
     with CSV_PATH.open('w') as f:
@@ -55,7 +55,7 @@ def get_games():
         return headings, [Game(*columns) for columns in reader]
 
 
-def print_stats(games):
+def _get_stats(games):
     num_done = len([g for g in games if g.progress_status in ('Finished', 'Completionated')])
     num_excluded = len([g for g in games if g.progress_status in ('Never Playing',)])
     num_incomplete = len([g for g in games if g.progress_status in ('Incomplete',)])
@@ -63,18 +63,80 @@ def print_stats(games):
 
     fraction_complete = num_done / (len(games) - num_excluded)
     percent_complete = "{}%".format(math.floor(fraction_complete * 100))
-    table_data = [
-        ['Total games', len(games)],
-        ['Finished', num_done],
-        ['Excluded', num_excluded],
-        ['Incomplete', num_incomplete],
-        ['Active', num_active],
-        ['% complete', percent_complete],
+
+    return {
+        'num_done': num_done,
+        'num_excluded': num_excluded,
+        'num_incomplete': num_incomplete,
+        'num_active': num_active,
+        'percent_complete': percent_complete,
+        'num_all': len(games),
+    }
+
+
+def _get_table_data(games):
+    stats = _get_stats(games)
+    return [
+        ['Total games', stats['num_all']],
+        ['Finished', stats['num_done']],
+        ['Excluded', stats['num_excluded']],
+        ['Incomplete', stats['num_incomplete']],
+        ['Active', stats['num_active']],
+        ['% complete', stats['percent_complete']],
     ]
 
-    table = SingleTable(table_data, title='Game stats')
+
+def print_stats(games):
+    table = SingleTable(_get_table_data(games), title='Game stats')
     table.inner_heading_row_border = False
     click.echo(table.table)
+
+
+def print_html(games):
+    table_data = _get_table_data(games)
+    print("""
+<html>
+    <head>
+        <title>Games</title>
+        <link href="style.css" rel="stylesheet">
+    </head>
+    <body>
+    """.strip())
+
+    print('<h1>Stats</h1>')
+
+    print('<table class="completionator-stats">')
+    for label, value in table_data:
+        print('<tr><td class="label">{label}</td><td class="value">{value}</td></tr>'.format(label=label, value=value))
+    print('</table>')
+
+    print('<h1>Games</h1>')
+
+    print('<h2>Active</h2>')
+    print('<ul class="completionator-games-active">')
+    for game in games:
+        if game.now_playing == 'Yes':
+            print('<li>{}</li>'.format(game.name))
+    print('</ul>')
+
+    print('<h2>Incomplete and inactive</h2>')
+    print('<ul class="completionator-games-incomplete">')
+    for game in games:
+        if game.now_playing != 'Yes' and game.progress_status == 'Incomplete':
+            print('<li>{}</li>'.format(game.name))
+    print('</ul>')
+
+    print('<h2>Complete</h2>')
+    print('<ul class="completionator-games-complete">')
+    for game in games:
+        if game.progress_status in ('Done', 'Completionated'):
+            print('<li>{}</li>'.format(game.name))
+    print('</ul>')
+
+    print("""
+    </body>
+</html>
+    """.strip())
 
 
 @click.command()
@@ -86,7 +148,8 @@ def print_stats(games):
 @click.option('--random/--no-random', default=False, help="Shuffle output")
 @click.option('--limit', default=0, type=int, help="Truncate results (0=don't truncate; default)")
 @click.option('--stats', default=False, is_flag=True, help="Print some stats to stderr")
-def cli(change_user, update, active, todo, fmt, random, limit, stats):
+@click.option('--html', default=False, is_flag=True, help="Print HTML representation of everything")
+def cli(change_user, update, active, todo, fmt, random, limit, stats, html):
     """
     Simple and sane interface to your Completionator collection.
 
@@ -122,6 +185,9 @@ def cli(change_user, update, active, todo, fmt, random, limit, stats):
         update_csv(user_id=settings['user_id'])
 
     headings, games = get_games()
+
+    if html:
+        print_html(games)
 
     if stats:
         print_stats(games)
