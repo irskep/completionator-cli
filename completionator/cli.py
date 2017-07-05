@@ -129,7 +129,7 @@ def print_html(games):
     print('<h2>Complete</h2>')
     print('<ul class="completionator-games-complete">')
     for game in games:
-        if game.progress_status in ('Done', 'Completionated'):
+        if game.progress_status in ('Finished', 'Completionated'):
             print('<li>{}</li>'.format(game.name))
     print('</ul>')
 
