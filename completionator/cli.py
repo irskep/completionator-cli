@@ -16,15 +16,18 @@ from terminaltables import SingleTable
 from .html2csv import html2csv
 
 
-CSV_PATH = Path(appdirs.user_data_dir('completionator', 'steveasleep')) / 'games.csv'
-SETTINGS_PATH = Path(appdirs.user_data_dir('completionator', 'steveasleep')) / 'settings.json'
+CSV_PATH = Path(
+    appdirs.user_data_dir('completionator', 'steveasleep')) / 'games.csv'
+SETTINGS_PATH = Path(
+    appdirs.user_data_dir('completionator', 'steveasleep')) / 'settings.json'
 makedirs(str(CSV_PATH.parent), exist_ok=True)
 
 
 def get_settings(change_user=False):
     if change_user or not SETTINGS_PATH.exists():
         user_id = click.prompt(
-            "What's your user ID? (Go to 'My Profile', copy the number at the end of the URL)",
+            "What's your user ID? (Go to 'My Profile', copy the number at the"
+            " end of the URL)",
             type=int)
         settings = {'user_id': user_id}
         with SETTINGS_PATH.open('w') as f:
@@ -36,9 +39,12 @@ def get_settings(change_user=False):
 
 
 def update_csv(user_id):
-    click.echo(click.style('Requesting data from server...', fg='blue'), err=True)
+    click.echo(
+        click.style('Requesting data from server...', fg='blue'), err=True)
     r = requests.get(
-        'http://completionator.com/Collection/ExportToExcel/{}?keyword=&isHidden=false&shouldBreakOutCompilationGames=true&sortColumn=GameName&sortDirection=ASC'.format(user_id))
+        ('http://completionator.com/Collection/ExportToExcel/{}'
+         '?keyword=&isHidden=false&shouldBreakOutCompilationGames=true'
+         '&sortColumn=GameName&sortDirection=ASC').format(user_id))
     with CSV_PATH.open('w') as f:
         html2csv(r.text, f)
 
@@ -56,9 +62,13 @@ def get_games():
 
 
 def _get_stats(games):
-    num_done = len([g for g in games if g.progress_status in ('Finished', 'Completionated')])
-    num_excluded = len([g for g in games if g.progress_status in ('Never Playing',)])
-    num_incomplete = len([g for g in games if g.progress_status in ('Incomplete',)])
+    num_done = len(
+        [g for g in games
+         if g.progress_status in ('Finished', 'Completionated')])
+    num_excluded = len(
+        [g for g in games if g.progress_status in ('Never Playing',)])
+    num_incomplete = len(
+        [g for g in games if g.progress_status in ('Incomplete',)])
     num_active = len([g for g in games if g.now_playing == 'Yes'])
 
     fraction_complete = num_done / (len(games) - num_excluded)
